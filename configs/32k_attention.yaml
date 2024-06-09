@@ -1,0 +1,199 @@
+# python3 ~/submit.py -i config/8_clap_audiomae_ldm/2023_06_12_audiomae_crossattn_audiocaps.sh --cpu 16 --gpu 2 --mem 96 --group_id 122 --cluster_id 17
+metadata_root: "/mnt/bn/arnold-yy-audiodata/audioldm/metadata-master/processed/dataset_root.json"
+log_directory: "/mnt/bn/arnold-yy-audiodata/audioldm/audioldm2/model_logs"
+exp_group: "32k"
+exp_name: "32k_audioldm_attention_tune"
+project: "audioldm3"
+
+# load_ldm2: true
+
+reload_from_ckpt: "/mnt/bn/arnold-yy-audiodata/audioldm/audioldm2/model_logs/32k/32k_audioldm_attention/checkpoints/checkpoint-fad-133.00-global_step=899999.ckpt"
+
+data: 
+  train: ["/mnt/bn/arnold-yy-audiodata/audio_data/dcase_2024/esc_fore.json","/mnt/bn/arnold-yy-audiodata/audio_data/dcase_2024/esc_fore.json","/mnt/bn/arnold-yy-audiodata/audio_data/dcase_2024/esc_fore.json","/mnt/bn/arnold-yy-audiodata/audio_data/dcase_2024/urbansound_fore.json","/mnt/bn/arnold-yy-audiodata/audio_data/dcase_2024/urbansound_fore.json","/mnt/bn/arnold-yy-audiodata/audio_data/dcase_2024/wavcaps_fore.json"]
+  val: "retrival_audiocaps_trainable"
+  test: "retrival_audiocaps_trainable100"
+  class_label_indices: "retrival_audiocaps_text"
+  dataloader_add_ons: []
+  clap_trainable: false
+  data_root: "/mnt/bn/lqhaoheliu/datasets/audiocaps/audios/train"
+  retrival: false
+  dcase: true
+  dcase_back: ["/mnt/bn/arnold-yy-audiodata/audio_data/dcase_2024/esc_back.json","/mnt/bn/arnold-yy-audiodata/audio_data/dcase_2024/urbansound_back.json"]
+  re_num: 3
+  ge_num: 3
+  # train: ["retrival_audiocaps"]
+  # train: ["retrival_audio_external"]
+  # val: "retrival_audio_external"
+  # test: "retrival_audio_external"
+  # class_label_indices: "retrival_audiocaps_text"
+  # dataloader_add_ons: ["extract_kaldi_fbank_feature", "waveform_rs_48k"]
+  # clap_trainable: true
+  # retrival: true
+  # re_num: 3
+  # ge_num: 3
+
+step:
+  validation_every_n_epochs: 5  # 500
+  save_checkpoint_every_n_steps: 100000
+  # limit_val_batches: None
+  max_steps: 1500000
+  save_top_k: 4
+
+preprocessing:
+  audio:
+    sampling_rate: 32000
+    max_wav_value: 32768.0
+    duration: 4.096
+  stft:
+    filter_length: 2048
+    hop_length: 256
+    win_length: 1024
+  mel:
+    n_mel_channels: 96
+    mel_fmin: 0
+    mel_fmax: 12000
+    target_length: 500
+
+augmentation:
+  mixup: 0.0
+
+model:
+  target: latent_diffusion.models.ddpm.LatentDiffusion
+  params:
+    base_learning_rate: 5.0e-05
+    sampling_rate: 32000
+    batchsize: 8
+    linear_start: 0.0015
+    linear_end: 0.0195
+    num_timesteps_cond: 1
+    log_every_t: 200
+    timesteps: 1000
+    unconditional_prob_cfg: 0.1
+    parameterization: eps # [eps, x0, v]
+    first_stage_key: fbank
+    latent_t_size: 128 # TODO might need to change
+    latent_f_size: 24
+    channels: 8 # TODO might need to change
+    monitor: val/loss_simple_ema
+    scale_by_std: true
+    clap_trainable: false
+    retrival_num: 0
+    use_clap: false
+    unet_config:
+      target: latent_diffusion.modules.diffusionmodules.openaimodel.UNetModel
+      params:
+        image_size: 64 # Ignore this parameter
+        # Conditioning
+        # extra_film_condition_dim: 512 # If you use film as extra condition, set this parameter. For example if you have two conditioning vectors each have dimension 512, then this number would be 1024
+        context_dim:  #original is 768 added for 768 and 1024
+        - 1024   
+        # - 1
+        in_channels: 8 # The input channel of the UNet model
+        out_channels: 8 # TODO might need to change
+        model_channels: 128 # TODO might need to change
+        attention_resolutions:
+        - 8
+        - 4
+        - 2
+        num_res_blocks: 2
+        channel_mult:
+        - 1
+        - 2
+        - 3
+        - 5
+        num_head_channels: 32
+        use_spatial_transformer: true
+        transformer_depth: 1
+
+        # context_dim: none
+    first_stage_config:
+      base_learning_rate: 4.5e-05
+      target: latent_encoder.autoencoder.AutoencoderKL
+      params:
+        batchsize: 2
+        monitor: val/rec_loss
+        image_key: fbank
+        subband: 1
+        embed_dim: 8
+        time_shuffle: 1
+        lossconfig:
+          target: latent_diffusion.modules.losses.LPIPSWithDiscriminator
+          params:
+            disc_start: 50001
+            kl_weight: 1.0
+            disc_weight: 0.5
+            disc_in_channels: 1
+        ddconfig:
+          double_z: true
+          z_channels: 8
+          resolution: 256
+          mel_bins: 96
+          downsample_time: false
+          in_channels: 1
+          out_ch: 1
+          ch: 128
+          ch_mult:
+          - 1
+          - 2
+          - 4
+          num_res_blocks: 2
+          attn_resolutions: []
+          dropout: 0.0
+    cond_stage_config:
+      # crossattn_text:
+      #   cond_stage_key: caption
+      #   conditioning_key: crossattn
+      #   target: latent_diffusion.modules.encoders.modules.FlanT5HiddenState
+      #   params:
+      #     emb_num: 1
+      #     input_caption: true
+
+
+      # film_clap:
+      #   cond_stage_key: caption
+      #   conditioning_key: film
+      #   target: latent_diffusion.modules.encoders.modules.Claplaion
+      #   params:
+      #     model_path: /mnt/bn/arnold-yy-audiodata/pre_load_models/big_clap.pt
+      #     re_num: 1
+      #     input_caption: true
+      #     encode_type: text
+      #     pos_emb: false
+      #     cross_attention: false
+      crossattn_text:
+        cond_stage_key: text
+        conditioning_key: crossattn
+        target: latent_diffusion.modules.encoders.modules.FlanT5HiddenState
+        params:
+          emb_num: 1
+          input_caption: true
+    
+
+      # crossattn_audiovae_retrival:
+      #   cond_stage_key:  vae_list   #ta_kaldi_fbank
+      #   conditioning_key: crossattn
+      #   target: latent_diffusion.modules.encoders.modules.AudioVAEretrieval
+      #   params: 
+      #     re_num: 3
+      #     seq_len: 2048
+      #     emb_dim: 16
+      #     pos_emb: true
+
+      # crossattn_clap_retrival:
+      #   cond_stage_key: tcaps_list
+      #   conditioning_key: crossattn
+      #   target: latent_diffusion.modules.encoders.modules.Claplaion
+      #   params:
+      #     model_path: /mnt/bn/arnold-yy-audiodata/clap_new/CLAP-main/model_logs/checkpoints/01_25_esc_caps_no_freeze_sdown_0.5_noend_add_random/epoch_500.pt
+      #     re_num: 3
+      #     input_caption: false
+      #     encode_type: text
+      #     pos_emb: true
+
+
+
+    evaluation_params:
+      unconditional_guidance_scale: 2.0
+      ddim_sampling_steps: 200
+      n_candidates_per_samples: 1
