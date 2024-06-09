@@ -39,7 +39,6 @@ config_yaml = yaml.load(open(config, "r"), Loader=yaml.FullLoader)
 def get_model():
     latent_diffusion = instantiate_from_config(config_yaml["model"]).to("cuda")
     PATH = "Dcase2024-Task7/checkpoints/test_model.ckpt"
-    torch.save({'state_dict':state_dict},"test_model.ckpt")
     state_dict = torch.load(PATH)["state_dict"]
     latent_diffusion.load_state_dict(state_dict)
     return latent_diffusion
