@@ -7,7 +7,7 @@ import numpy as np
 
 import sys
 
-sys.path.append("src/hifigan")
+sys.path.append("Dcase2024-Task7/src/hifigan")
 
 from models import BigVGAN
 
@@ -55,7 +55,7 @@ def torch_version_orig_mod_remove(state_dict):
 def get_vocoder(config, device, mel_bins):
 
     if mel_bins == 96:
-        with open("src/hifigan/32k_config.json", "r") as f:
+        with open("Dcase2024-Task7/src/hifigan/32k_config.json", "r") as f:
             config = json.load(f)
 
 
