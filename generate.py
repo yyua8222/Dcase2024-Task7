@@ -11,14 +11,14 @@ print(f"Current file's directory: {current_directory}")
 
 import sys
 
-sys.path.append(f"{current_director}/src")
-sys.path.append(f"{current_director}/src/hifigan")
+sys.path.append(f"{current_directory}/src")
+sys.path.append(f"{current_directory}/src/hifigan")
 
 
-os.environ["HF_HOME"] = f"{current_director}/pre_load_models"
+os.environ["HF_HOME"] = f"{current_directory}/pre_load_models"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["HUGGINGFACE_HUB_CACHE"] = f"{current_director}/pre_load_models"
-os.environ["TORCH_HOME"] = f"{current_director}/pre_load_models"
+os.environ["HUGGINGFACE_HUB_CACHE"] = f"{current_directory}/pre_load_models"
+os.environ["TORCH_HOME"] = f"{current_directory}/pre_load_models"
 
 
 import soundfile as sf
@@ -37,7 +37,7 @@ import ipdb
 import shutil
 
 
-config_root = f"{current_director}/configs"
+config_root = f"{current_directory}/configs"
 
 config = os.path.join(config_root, "32k_attention.yaml")
 
@@ -49,7 +49,7 @@ config_yaml = yaml.load(open(config, "r"), Loader=yaml.FullLoader) # ignore_secu
 
 def get_model():
     latent_diffusion = instantiate_from_config(config_yaml["model"]).to("cuda")
-    PATH = f"{current_director}/checkpoints/test_model.ckpt"
+    PATH = f"{current_directory}/checkpoints/test_model.ckpt"
     state_dict = torch.load(PATH)["state_dict"]
     latent_diffusion.load_state_dict(state_dict)
     return latent_diffusion
