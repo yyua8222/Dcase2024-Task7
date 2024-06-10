@@ -1,13 +1,24 @@
-import sys
 
-sys.path.append("Dcase2024-Task7/src")
 
 import os
 
-os.environ["HF_HOME"] = "Dcase2024-Task7/pre_load_models"
+current_file_path = os.path.abspath(__file__)
+print(f"Current file path: {current_file_path}")
+
+current_directory = os.path.dirname(current_file_path)
+print(f"Current file's directory: {current_directory}")
+
+
+import sys
+
+sys.path.append(f"{current_director}/src")
+sys.path.append(f"{current_director}/src/hifigan")
+
+
+os.environ["HF_HOME"] = f"{current_director}/pre_load_models"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["HUGGINGFACE_HUB_CACHE"] = "Dcase2024-Task7/pre_load_models"
-os.environ["TORCH_HOME"] = "Dcase2024-Task7/pre_load_models"
+os.environ["HUGGINGFACE_HUB_CACHE"] = f"{current_director}/pre_load_models"
+os.environ["TORCH_HOME"] = f"{current_director}/pre_load_models"
 
 
 import soundfile as sf
@@ -26,11 +37,11 @@ import ipdb
 import shutil
 
 
-config_root = "Dcase2024-Task7/configs"
+config_root = f"{current_director}/configs"
 
 config = os.path.join(config_root, "32k_attention.yaml")
 
-config_yaml = yaml.load(open(config, "r"), Loader=yaml.FullLoader)
+config_yaml = yaml.load(open(config, "r"), Loader=yaml.FullLoader) # ignore_security_alert_wait_for_fix RCE
 
 
 
@@ -38,14 +49,14 @@ config_yaml = yaml.load(open(config, "r"), Loader=yaml.FullLoader)
 
 def get_model():
     latent_diffusion = instantiate_from_config(config_yaml["model"]).to("cuda")
-    PATH = "Dcase2024-Task7/checkpoints/test_model.ckpt"
+    PATH = f"{current_director}/checkpoints/test_model.ckpt"
     state_dict = torch.load(PATH)["state_dict"]
     latent_diffusion.load_state_dict(state_dict)
     return latent_diffusion
 
 
 model = get_model().cuda()
-clap = CLAP(model_path = "Dcase2024-Task7/checkpoints/CLAP_weights_2023.pth")
+clap = CLAP(model_path = f"{current_director}/checkpoints/CLAP_weights_2023.pth")
 model.clap = clap.cuda().eval()
 model = torch.compile(model)
 model.eval()

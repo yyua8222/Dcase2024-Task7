@@ -1,4 +1,13 @@
 import os
+
+current_file_path = os.path.abspath(__file__)
+print(f"Current file path: {current_file_path}")
+desired_path = os.path.dirname(current_file_path)
+print(f"Directory path: {desired_path}")
+while not desired_path.endswith('/src'):
+    desired_path = os.path.dirname(desired_path)
+
+target_path = os.path.join(desired_path,"hifigan")
 import json
 
 import torch
@@ -7,7 +16,7 @@ import numpy as np
 
 import sys
 
-sys.path.append("Dcase2024-Task7/src/hifigan")
+sys.path.append(target_path)
 
 from models import BigVGAN
 
@@ -55,10 +64,8 @@ def torch_version_orig_mod_remove(state_dict):
 def get_vocoder(config, device, mel_bins):
 
     if mel_bins == 96:
-        with open("Dcase2024-Task7/src/hifigan/32k_config.json", "r") as f:
+        with open(f"{target_path}/32k_config.json", "r") as f:
             config = json.load(f)
-
-
 
         config = AttrDict(config)
         vocoder = BigVGAN(config)
