@@ -56,7 +56,7 @@ def get_model():
 
 
 model = get_model().cuda()
-clap = CLAP(model_path = f"{current_director}/checkpoints/CLAP_weights_2023.pth")
+clap = CLAP(model_path = f"{current_directory}/checkpoints/CLAP_weights_2023.pth")
 model.clap = clap.cuda().eval()
 model = torch.compile(model)
 model.eval()
